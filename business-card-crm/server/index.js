@@ -6,12 +6,15 @@ const { initDb } = require('./db');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors({
-  origin: '*'
-}));
+app.use(cors({ origin: '*' }));
 
 app.use(express.json());
-app.use('/api/cards', require('./routes/cards'));
+try {
+  app.use('/api/cards', require('./routes/cards'));
+  console.log('✅ Routes loaded');
+} catch (err) {
+  console.error('❌ Failed to load routes:', err);
+}
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
 initDb().then(() => {
