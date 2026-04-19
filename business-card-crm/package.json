@@ -1,0 +1,9 @@
+{
+  "name": "business-card-crm",
+  "scripts": {
+    "server": "node server/index.js",
+    "client": "cd client && npm run dev",
+    "dev": "npx concurrently \"npm run server\" \"npm run client\""
+  },
+  "devDependencies": {}
+}
