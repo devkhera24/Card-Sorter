@@ -1,45 +1,13 @@
-const { createClient } = require('@libsql/client');
+const { createClient } = require('@supabase/supabase-js');
 
-const db = createClient({
-  url: process.env.TURSO_DATABASE_URL,
-  authToken: process.env.TURSO_AUTH_TOKEN,
-});
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 async function initDb() {
-  await db.execute(`
-    CREATE TABLE IF NOT EXISTS contacts (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT,
-      email TEXT,
-      phone TEXT,
-      company TEXT,
-      designation TEXT,
-      website TEXT,
-      address TEXT,
-      social_handles TEXT,
-      category TEXT,
-      description TEXT,
-      linkedin_url TEXT,
-      founded_year TEXT,
-      company_size TEXT,
-      keywords TEXT,
-      raw_card_text TEXT,
-      image_url TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-  // Add keywords column if missing (existing DBs)
-  try {
-    await db.execute(`ALTER TABLE contacts ADD COLUMN keywords TEXT`);
-  } catch (e) {}
-
-  // Add image_url column if missing
-  try {
-    await db.execute(`ALTER TABLE contacts ADD COLUMN image_url TEXT`);
-  } catch (e) {}
-
-  console.log('✅ DB initialized');
+  // Supabase table is created via SQL Editor — nothing to do here
+  console.log('✅ Supabase DB ready');
 }
 
-module.exports = { db, initDb };
+module.exports = { supabase, initDb };
