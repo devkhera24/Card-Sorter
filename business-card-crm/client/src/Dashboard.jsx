@@ -17,6 +17,107 @@ function getCategoryStyle(cat) {
   return CATEGORY_COLORS[cat] || CATEGORY_COLORS['Other']
 }
 
+function ContactCard({ contact, onDelete, deleting }) {
+  const [expanded, setExpanded] = useState(false)
+
+  return (
+    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 hover:border-gray-600 transition-all group">
+      <div className="flex items-start justify-between mb-3">
+        <div className="min-w-0 flex-1 pr-2">
+          <h3 className="font-semibold text-white truncate">{contact.name || 'Unknown'}</h3>
+          <p className="text-gray-400 text-sm truncate">{contact.designation || ''}</p>
+        </div>
+        <button
+          onClick={() => onDelete(contact.id)}
+          disabled={deleting === contact.id}
+          className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 transition-all text-lg flex-shrink-0"
+        >
+          {deleting === contact.id ? '⌛' : '🗑️'}
+        </button>
+      </div>
+
+      {contact.company && (
+        <p className="text-indigo-400 font-medium text-sm mb-3 truncate">🏢 {contact.company}</p>
+      )}
+
+      {contact.category && (
+        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium border mb-3 ${getCategoryStyle(contact.category)}`}>
+          {contact.category}
+        </span>
+      )}
+
+      {contact.description && (
+        <div className="mb-3">
+          <p className={`text-gray-500 text-xs leading-relaxed ${expanded ? '' : 'line-clamp-2'}`}>
+            {contact.description}
+          </p>
+          {contact.description.length > 120 && (
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="text-indigo-400 hover:text-indigo-300 text-xs mt-1 transition-colors"
+            >
+              {expanded ? 'Show less ▲' : 'Show more ▼'}
+            </button>
+          )}
+        </div>
+      )}
+
+      <div className="flex flex-col gap-1.5 text-xs">
+        {contact.email && (
+          <a
+            href={`mailto:${contact.email}`}
+            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors min-w-0"
+          >
+            <span className="flex-shrink-0">✉️</span>
+            <span className="truncate">{contact.email}</span>
+          </a>
+        )}
+        {contact.phone && (
+          <a
+            href={`tel:${contact.phone}`}
+            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+          >
+            <span className="flex-shrink-0">📞</span>
+            <span>{contact.phone}</span>
+          </a>
+        )}
+        {contact.website && (
+          <a
+            href={contact.website.startsWith('http') ? contact.website : `https://${contact.website}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-gray-400 hover:text-indigo-400 transition-colors min-w-0"
+          >
+            <span className="flex-shrink-0">🌐</span>
+            <span className="truncate">{contact.website}</span>
+          </a>
+        )}
+        {contact.linkedin_url && (
+          <a
+            href={contact.linkedin_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-blue-500 hover:text-blue-400 transition-colors"
+          >
+            <span className="flex-shrink-0">💼</span>
+            <span>LinkedIn Profile</span>
+          </a>
+        )}
+        {contact.address && (
+          <div className="flex items-start gap-2 text-gray-500">
+            <span className="flex-shrink-0 mt-0.5">📍</span>
+            <span className="leading-relaxed">{contact.address}</span>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-4 pt-3 border-t border-gray-800 text-xs text-gray-600">
+        Added {new Date(contact.created_at).toLocaleDateString()}
+      </div>
+    </div>
+  )
+}
+
 export default function Dashboard() {
   const [contacts, setContacts] = useState([])
   const [categories, setCategories] = useState(['All'])
@@ -65,7 +166,7 @@ export default function Dashboard() {
         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
         <input
           type="text"
-          placeholder="Search by name, company, role, service..."
+          placeholder="Search by name, company, role, service, keywords..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full bg-gray-900 border border-gray-700 rounded-xl py-3 pl-11 pr-4 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition-all"
@@ -114,65 +215,12 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {contacts.map(contact => (
-          <div
+          <ContactCard
             key={contact.id}
-            className="bg-gray-900 border border-gray-800 rounded-2xl p-5 hover:border-gray-600 transition-all group"
-          >
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <h3 className="font-semibold text-white truncate">{contact.name || 'Unknown'}</h3>
-                <p className="text-gray-400 text-sm truncate">{contact.designation || ''}</p>
-              </div>
-              <button
-                onClick={() => handleDelete(contact.id)}
-                disabled={deleting === contact.id}
-                className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 transition-all text-lg"
-              >
-                {deleting === contact.id ? '⌛' : '🗑️'}
-              </button>
-            </div>
-
-            {contact.company && (
-              <p className="text-indigo-400 font-medium text-sm mb-3 truncate">🏢 {contact.company}</p>
-            )}
-
-            {contact.category && (
-              <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium border mb-3 ${getCategoryStyle(contact.category)}`}>
-                {contact.category}
-              </span>
-            )}
-
-            {contact.description && (
-              <p className="text-gray-500 text-xs leading-relaxed mb-3 line-clamp-2">{contact.description}</p>
-            )}
-
-            <div className="space-y-1.5 text-xs">
-              {contact.email && (
-                <a href={`mailto:${contact.email}`} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
-                  <span>✉️</span><span className="truncate">{contact.email}</span>
-                </a>
-              )}
-              {contact.phone && (
-                <a href={`tel:${contact.phone}`} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
-                  <span>📞</span><span>{contact.phone}</span>
-                </a>
-              )}
-              {contact.website && (
-                <a href={contact.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-gray-400 hover:text-indigo-400 transition-colors">
-                  <span>🌐</span><span className="truncate">{contact.website}</span>
-                </a>
-              )}
-              {contact.linkedin_url && (
-                <a href={contact.linkedin_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-500 hover:text-blue-400 transition-colors">
-                  <span>💼</span><span>LinkedIn</span>
-                </a>
-              )}
-            </div>
-
-            <div className="mt-4 pt-3 border-t border-gray-800 text-xs text-gray-600">
-              Added {new Date(contact.created_at).toLocaleDateString()}
-            </div>
-          </div>
+            contact={contact}
+            onDelete={handleDelete}
+            deleting={deleting}
+          />
         ))}
       </div>
     </div>

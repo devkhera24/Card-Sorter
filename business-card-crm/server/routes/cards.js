@@ -25,10 +25,8 @@ const upload = multer({
   }
 });
 
-// POST /api/cards/upload
 router.post('/upload', upload.single('card'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No image file provided' });
-
   const imagePath = req.file.path;
 
   try {
@@ -40,25 +38,21 @@ router.post('/upload', upload.single('card'), async (req, res) => {
     const enriched = await enrichCardData(extracted);
     console.log('✅ Enrichment complete:', enriched);
 
-    const contact = {
-      ...extracted,
-      ...enriched,
-      image_path: req.file.filename,
-    };
+    const contact = { ...extracted, ...enriched, image_path: req.file.filename };
 
     const stmt = db.prepare(`
       INSERT INTO contacts 
         (name, email, phone, company, designation, website, address, social_handles,
-         category, description, linkedin_url, founded_year, company_size, raw_card_text, image_path)
+         category, description, linkedin_url, founded_year, company_size, keywords, raw_card_text, image_path)
       VALUES 
         (@name, @email, @phone, @company, @designation, @website, @address, @social_handles,
-         @category, @description, @linkedin_url, @founded_year, @company_size, @raw_card_text, @image_path)
+         @category, @description, @linkedin_url, @founded_year, @company_size, @keywords, @raw_card_text, @image_path)
     `);
 
     const result = stmt.run(contact);
     const newContact = db.prepare('SELECT * FROM contacts WHERE id = ?').get(result.lastInsertRowid);
-
     res.json({ success: true, contact: newContact });
+
   } catch (err) {
     console.error('Error processing card:', err);
     if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
@@ -66,7 +60,6 @@ router.post('/upload', upload.single('card'), async (req, res) => {
   }
 });
 
-// GET /api/cards
 router.get('/', (req, res) => {
   const { category, sort = 'created_at', order = 'DESC' } = req.query;
   let query = 'SELECT * FROM contacts';
@@ -82,11 +75,9 @@ router.get('/', (req, res) => {
   const safeOrder = order === 'ASC' ? 'ASC' : 'DESC';
   query += ` ORDER BY ${safeSort} ${safeOrder}`;
 
-  const contacts = db.prepare(query).all(...params);
-  res.json(contacts);
+  res.json(db.prepare(query).all(...params));
 });
 
-// GET /api/cards/search
 router.get('/search', (req, res) => {
   const { q } = req.query;
   if (!q) return res.json([]);
@@ -96,21 +87,18 @@ router.get('/search', (req, res) => {
     SELECT * FROM contacts WHERE
       name LIKE ? OR email LIKE ? OR phone LIKE ? OR
       company LIKE ? OR designation LIKE ? OR category LIKE ? OR
-      description LIKE ? OR address LIKE ? OR raw_card_text LIKE ?
+      description LIKE ? OR address LIKE ? OR raw_card_text LIKE ? OR keywords LIKE ?
     ORDER BY created_at DESC
-  `).all(term, term, term, term, term, term, term, term, term);
+  `).all(term, term, term, term, term, term, term, term, term, term);
 
   res.json(contacts);
 });
 
-// GET /api/cards/categories
 router.get('/categories', (req, res) => {
   const rows = db.prepare('SELECT DISTINCT category FROM contacts WHERE category IS NOT NULL ORDER BY category').all();
-  const categories = ['All', ...rows.map(r => r.category)];
-  res.json(categories);
+  res.json(['All', ...rows.map(r => r.category)]);
 });
 
-// DELETE /api/cards/:id
 router.delete('/:id', (req, res) => {
   const contact = db.prepare('SELECT * FROM contacts WHERE id = ?').get(req.params.id);
   if (!contact) return res.status(404).json({ error: 'Contact not found' });
@@ -124,7 +112,6 @@ router.delete('/:id', (req, res) => {
   res.json({ success: true });
 });
 
-// GET /api/cards/:id
 router.get('/:id', (req, res) => {
   const contact = db.prepare('SELECT * FROM contacts WHERE id = ?').get(req.params.id);
   if (!contact) return res.status(404).json({ error: 'Not found' });

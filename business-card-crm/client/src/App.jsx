@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import UploadCard from 'UploadCard'
-import Dashboard from 'Dashboard'
+import UploadCard from './UploadCard'
+import Dashboard from './Dashboard'
 
 export default function App() {
   const [view, setView] = useState('dashboard')
