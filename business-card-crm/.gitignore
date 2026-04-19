@@ -3,3 +3,4 @@ node_modules/
 client/dist/
 server/uploads/
 server/contacts.db
+client/.env.production

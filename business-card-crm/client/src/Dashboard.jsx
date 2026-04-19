@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import axios from 'axios'
+import api from '../api'
 
 const CATEGORY_COLORS = {
   Technology: 'bg-blue-900/50 text-blue-300 border-blue-700',
@@ -36,6 +36,14 @@ function ContactCard({ contact, onDelete, deleting }) {
         </button>
       </div>
 
+      {contact.image_url && (
+        <img
+          src={contact.image_url}
+          alt="Business card"
+          className="w-full max-h-28 object-contain rounded-xl mb-3 border border-gray-800"
+        />
+      )}
+
       {contact.company && (
         <p className="text-indigo-400 font-medium text-sm mb-3 truncate">🏢 {contact.company}</p>
       )}
@@ -64,19 +72,13 @@ function ContactCard({ contact, onDelete, deleting }) {
 
       <div className="flex flex-col gap-1.5 text-xs">
         {contact.email && (
-          <a
-            href={`mailto:${contact.email}`}
-            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors min-w-0"
-          >
+          <a href={`mailto:${contact.email}`} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors min-w-0">
             <span className="flex-shrink-0">✉️</span>
             <span className="truncate">{contact.email}</span>
           </a>
         )}
         {contact.phone && (
-          <a
-            href={`tel:${contact.phone}`}
-            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
-          >
+          <a href={`tel:${contact.phone}`} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
             <span className="flex-shrink-0">📞</span>
             <span>{contact.phone}</span>
           </a>
@@ -93,10 +95,7 @@ function ContactCard({ contact, onDelete, deleting }) {
           </a>
         )}
         {contact.linkedin_url && (
-          <a
-            href={contact.linkedin_url}
-            target="_blank"
-            rel="noopener noreferrer"
+          <a href={contact.linkedin_url} target="_blank" rel="noopener noreferrer"
             className="flex items-center gap-2 text-blue-500 hover:text-blue-400 transition-colors"
           >
             <span className="flex-shrink-0">💼</span>
@@ -125,16 +124,17 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(null)
+  const [reenriching, setReenriching] = useState(false)
 
   const fetchContacts = useCallback(async () => {
     setLoading(true)
     try {
       if (searchQuery.trim()) {
-        const { data } = await axios.get(`/api/cards/search?q=${encodeURIComponent(searchQuery)}`)
+        const { data } = await api.get(`/api/cards/search?q=${encodeURIComponent(searchQuery)}`)
         setContacts(data)
       } else {
         const params = activeCategory !== 'All' ? `?category=${encodeURIComponent(activeCategory)}` : ''
-        const { data } = await axios.get(`/api/cards${params}`)
+        const { data } = await api.get(`/api/cards${params}`)
         setContacts(data)
       }
     } catch (e) {
@@ -144,7 +144,7 @@ export default function Dashboard() {
   }, [searchQuery, activeCategory])
 
   useEffect(() => {
-    axios.get('/api/cards/categories').then(({ data }) => setCategories(data))
+    api.get('/api/cards/categories').then(({ data }) => setCategories(data))
   }, [])
 
   useEffect(() => {
@@ -155,9 +155,22 @@ export default function Dashboard() {
   const handleDelete = async (id) => {
     if (!confirm('Delete this contact?')) return
     setDeleting(id)
-    await axios.delete(`/api/cards/${id}`)
+    await api.delete(`/api/cards/${id}`)
     setContacts(c => c.filter(x => x.id !== id))
     setDeleting(null)
+  }
+
+  const handleReenrichAll = async () => {
+    if (!confirm('Re-enrich all contacts missing keywords? This uses OpenAI credits.')) return
+    setReenriching(true)
+    try {
+      const { data } = await api.post('/api/cards/reenrich-all')
+      alert(`Done! ${data.results.filter(r => r.status === 'ok').length} contacts updated.`)
+      fetchContacts()
+    } catch (e) {
+      alert('Re-enrichment failed: ' + e.message)
+    }
+    setReenriching(false)
   }
 
   return (
@@ -172,12 +185,7 @@ export default function Dashboard() {
           className="w-full bg-gray-900 border border-gray-700 rounded-xl py-3 pl-11 pr-4 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition-all"
         />
         {searchQuery && (
-          <button
-            onClick={() => setSearchQuery('')}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
-          >
-            ✕
-          </button>
+          <button onClick={() => setSearchQuery('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">✕</button>
         )}
       </div>
 
@@ -203,6 +211,13 @@ export default function Dashboard() {
         <p className="text-gray-500 text-sm">
           {loading ? 'Loading...' : `${contacts.length} contact${contacts.length !== 1 ? 's' : ''} found`}
         </p>
+        <button
+          onClick={handleReenrichAll}
+          disabled={reenriching}
+          className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white px-3 py-1.5 rounded-lg transition-all disabled:opacity-50"
+        >
+          {reenriching ? '⏳ Re-enriching...' : '🔄 Fix Keywords'}
+        </button>
       </div>
 
       {!loading && contacts.length === 0 && (

@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import axios from 'axios'
+import api from '../api'
 
 export default function UploadCard({ onSuccess, onCancel }) {
   const [file, setFile] = useState(null)
@@ -34,7 +34,7 @@ export default function UploadCard({ onSuccess, onCancel }) {
 
     try {
       setStatus('extracting')
-      const { data } = await axios.post('/api/cards/upload', formData, {
+      const { data } = await api.post('/api/cards/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         onUploadProgress: () => setStatus('enriching'),
       })
@@ -99,6 +99,9 @@ export default function UploadCard({ onSuccess, onCancel }) {
       {result && (
         <div className="mt-6 bg-gray-900 rounded-2xl p-6 border border-gray-800">
           <h3 className="font-bold text-lg mb-4">Contact Saved 🎉</h3>
+          {result.image_url && (
+            <img src={result.image_url} alt="Card" className="w-full max-h-40 object-contain rounded-xl mb-4 border border-gray-700" />
+          )}
           <div className="grid grid-cols-2 gap-3 text-sm">
             {[
               ['Name', result.name],
