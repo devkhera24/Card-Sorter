@@ -122,14 +122,6 @@ router.get('/search', async (req, res) => {
   res.json(result.rows);
 });
 
-// GET /api/cards/categories
-router.get('/categories', async (req, res) => {
-  const result = await db.execute(
-    'SELECT DISTINCT category FROM contacts WHERE category IS NOT NULL ORDER BY category'
-  );
-  res.json(['All', ...result.rows.map(r => r.category)]);
-});
-
 // POST /api/cards/reenrich-all
 router.post('/reenrich-all', async (req, res) => {
   const result = await db.execute(
@@ -177,6 +169,14 @@ router.delete('/:id', async (req, res) => {
 
   await db.execute({ sql: 'DELETE FROM contacts WHERE id = ?', args: [req.params.id] });
   res.json({ success: true });
+});
+
+// GET /api/cards/categories
+router.get('/categories', async (req, res) => {
+  const result = await db.execute(
+    'SELECT DISTINCT category FROM contacts WHERE category IS NOT NULL ORDER BY category'
+  );
+  res.json(['All', ...result.rows.map(r => r.category)]);
 });
 
 // GET /api/cards/:id
