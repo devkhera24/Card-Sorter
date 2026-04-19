@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import api from '../api'
+import api from './api'
 
 const CATEGORY_COLORS = {
   Technology: 'bg-blue-900/50 text-blue-300 border-blue-700',
